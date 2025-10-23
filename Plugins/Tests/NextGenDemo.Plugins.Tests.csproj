@@ -34,6 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Shared\NextGenDemo.Shared.csproj" />
     <ProjectReference Include="..\NextGenDemo.Plugins.csproj" />
   </ItemGroup>
 </Project>

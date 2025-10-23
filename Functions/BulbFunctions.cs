@@ -4,8 +4,8 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using IOTBulbFunctions.Models;
 using IOTBulbFunctions.Services;
+using NextGenDemo.Shared.Models;
 
 namespace IOTBulbFunctions
 {
@@ -113,7 +113,7 @@ namespace IOTBulbFunctions
                     PropertyNameCaseInsensitive = true,
                     Converters = { new JsonStringEnumConverter() }
                 };
-                var request = JsonSerializer.Deserialize<QuickActionRequest>(requestBody, options);
+                var request = JsonSerializer.Deserialize<BulbControlRequest>(requestBody, options);
                 
                 if (request == null || string.IsNullOrEmpty(request.BulbIP) || string.IsNullOrEmpty(request.Action))
                 {
@@ -194,11 +194,5 @@ namespace IOTBulbFunctions
 
             return string.Empty;
         }
-    }
-
-    public class QuickActionRequest
-    {
-        public string BulbIP { get; set; } = string.Empty;
-        public string Action { get; set; } = string.Empty;
     }
 }

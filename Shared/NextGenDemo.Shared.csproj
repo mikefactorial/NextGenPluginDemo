@@ -40,13 +40,5 @@
     <PackageReference Include="System.ClientModel" Version="1.2.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Shared\NextGenDemo.Shared.csproj" />
-  </ItemGroup>
-
   <Import Project="$(PowerAppsTargetsPath)\Microsoft.PowerApps.VisualStudio.Plugin.targets" Condition="Exists('$(PowerAppsTargetsPath)\Microsoft.PowerApps.VisualStudio.Plugin.targets')" />
-
-  <Target Name="PostBuild" AfterTargets="Pack">
-    <Exec Command="dotnet nuget sign &quot;$(ProjectDir)bin/$(ConfigurationName)/NextGenDemo.Plugins.1.0.0.nupkg&quot; --certificate-path &quot;$(ProjectDir)/certificate.pfx&quot; --certificate-password &quot;certificate_password&quot; --overwrite" />
-  </Target>
 </Project>

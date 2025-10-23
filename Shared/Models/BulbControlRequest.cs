@@ -1,26 +1,26 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace IOTBulbFunctions.Models
+namespace NextGenDemo.Shared.Models
 {
     public class BulbControlRequest
     {
-        [Required]
         public string BulbIP { get; set; } = string.Empty;
+        public string Action { get; set; } = string.Empty;
+
+        public List<ColorStep> Colors { get; set; } = new List<ColorStep>();
         
-        [Required]
-        public List<ColorStep> Colors { get; set; } = new();
-        
-        [Required]
-        public PatternSettings Pattern { get; set; } = new();
+        public PatternSettings Pattern { get; set; } = new PatternSettings();
     }
 
     public class ColorStep
     {
-        public string? Hex { get; set; }
-        public int? Hue { get; set; }
-        public int? Saturation { get; set; }
-        public int? Brightness { get; set; }
-        public int? Kelvin { get; set; }
+        public string Hex { get; set; }
+        public Int32? Hue { get; set; }
+        public Int32? Saturation { get; set; }
+        public Int32? Brightness { get; set; }
+        public Int32? Kelvin { get; set; }
         public int DurationMs { get; set; } = 1000; // Default 1 second
     }
 

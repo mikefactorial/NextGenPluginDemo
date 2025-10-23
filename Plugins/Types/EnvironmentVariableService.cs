@@ -12,6 +12,7 @@ namespace NextGenDemo.Plugins.Types
     {
         public static string StorageContainerEnvironmentVariableName = "mf_storagecontainername";
         public static string StorageEndpointVariableName = "mf_storageendpoint";
+        public static string BulbIpVariableName = "mf_bulbip";
         public EnvironmentVariableService(HttpClientWrapper httpClient, IManagedIdentityService managedIdentityService, IOrganizationService service, ITracingService tracingService)
         {
             this.HttpClient = httpClient;

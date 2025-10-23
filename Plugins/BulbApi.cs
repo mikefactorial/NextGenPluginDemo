@@ -3,6 +3,7 @@ using Microsoft.Xrm.Sdk;
 using Newtonsoft.Json;
 using NextGenDemo.Plugins.Integration;
 using NextGenDemo.Plugins.Types;
+using NextGenDemo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel;
@@ -47,6 +48,7 @@ namespace NextGenDemo.Plugins
             var context = localPluginContext.PluginExecutionContext;
 
             localPluginContext.Trace(localPluginContext.PluginExecutionContext.MessageName + " BulbApi Plugin Execution Started");
+            var bulbIp = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbIpVariableName);
             var scopes = new List<string> { $"f682a938-4ec2-4a84-ae0c-70e40663a754/.default" };
             localPluginContext.Trace("Acquiring token for Bulb API...");
             var token = localPluginContext.ManagedIdentityService.AcquireToken(scopes);
@@ -56,7 +58,8 @@ namespace NextGenDemo.Plugins
             var jsonPayloadString = localPluginContext.PluginExecutionContext.InputParameters[BulbApiPayloadKey].ToString();
 
             // Deserialize the JSON string to ensure it's properly formatted, then create HttpContent
-            var payloadObject = JsonConvert.DeserializeObject(jsonPayloadString);
+            var payloadObject = JsonConvert.DeserializeObject<BulbControlRequest>(jsonPayloadString);
+            payloadObject.BulbIP = bulbIp;
             var httpContent = new StringContent(JsonConvert.SerializeObject(payloadObject), Encoding.UTF8, "application/json");
 
             localPluginContext.Trace($"Calling Bulb API with payload {JsonConvert.SerializeObject(payloadObject)}...");

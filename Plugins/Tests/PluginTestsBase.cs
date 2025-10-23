@@ -56,6 +56,7 @@ namespace NextGenDemo.Plugins.Tests
             serviceProvider.Setup(x => x.GetService(typeof(IExecutionContext))).Returns(pluginContext);
             serviceProvider.Setup(x => x.GetService(typeof(ITracingService))).Returns(tracingService);
 
+            /*
             organizationService.Setup(x => x.Retrieve(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<ColumnSet>())
             ).Returns((string entityName, Guid id, ColumnSet columnSet) =>
             {
@@ -67,6 +68,7 @@ namespace NextGenDemo.Plugins.Tests
                 }
                 return entity;
             });
+            */
             return (serviceProvider, organizationService, blobContainerClient, blobClient, pluginContext);
         }
     }

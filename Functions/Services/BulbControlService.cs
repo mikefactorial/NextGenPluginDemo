@@ -1,8 +1,8 @@
 using System.Text;
 using System.Text.Json;
-using IOTBulbFunctions.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NextGenDemo.Shared.Models;
 
 namespace IOTBulbFunctions.Services
 {
