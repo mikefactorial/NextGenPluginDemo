@@ -48,18 +48,34 @@ namespace NextGenDemo.Plugins
             var context = localPluginContext.PluginExecutionContext;
 
             localPluginContext.Trace(localPluginContext.PluginExecutionContext.MessageName + " BulbApi Plugin Execution Started");
-            var bulbIp = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbIpVariableName);
-            var scopes = new List<string> { $"f682a938-4ec2-4a84-ae0c-70e40663a754/.default" };
-            localPluginContext.Trace("Acquiring token for Bulb API...");
+
+            // Define the auth scope for the Azure Function (e.g. clientid/.default)
+            var azFunctionScope = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.AzureFunctionAuthScopeName);
+            var scopes = new List<string> 
+            {
+                azFunctionScope 
+            };
+
+            // Acquire token for the Azure Function
+            localPluginContext.Trace($"Acquiring token for Azure Function: {azFunctionScope}");
             var token = localPluginContext.ManagedIdentityService.AcquireToken(scopes);
 
+            // Retrieve the JSON payload from input parameters
             localPluginContext.Trace($"Token acquired. Preparing to call Bulb API: {token}");
-            var azFunctionUrl = "https://nextgenpluginfunctions-e2axfpasfmaxbcap.eastus-01.azurewebsites.net/api/BulbQuickAction";
             var jsonPayloadString = localPluginContext.PluginExecutionContext.InputParameters[BulbApiPayloadKey].ToString();
 
             // Deserialize the JSON string to ensure it's properly formatted, then create HttpContent
             var payloadObject = JsonConvert.DeserializeObject<BulbControlRequest>(jsonPayloadString);
+            // Set the Bulb IP from environment variable
+            var bulbIp = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbIpVariableName);
             payloadObject.BulbIP = bulbIp;
+
+            var azFunctionUrl = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbQuickActionUrlName);
+            if (string.IsNullOrEmpty(payloadObject.Action))
+            {
+                azFunctionUrl = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbControlUrlName);
+            }
+
             var httpContent = new StringContent(JsonConvert.SerializeObject(payloadObject), Encoding.UTF8, "application/json");
 
             localPluginContext.Trace($"Calling Bulb API with payload {JsonConvert.SerializeObject(payloadObject)}...");

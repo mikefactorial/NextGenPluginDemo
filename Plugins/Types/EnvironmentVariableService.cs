@@ -13,6 +13,9 @@ namespace NextGenDemo.Plugins.Types
         public static string StorageContainerEnvironmentVariableName = "mf_storagecontainername";
         public static string StorageEndpointVariableName = "mf_storageendpoint";
         public static string BulbIpVariableName = "mf_bulbip";
+        public static string BulbQuickActionUrlName = "mf_bulbquickactionurl";
+        public static string BulbControlUrlName = "mf_bulbcontrolurl";
+        public static string AzureFunctionAuthScopeName = "mf_azurefunctionauthscope";
         public EnvironmentVariableService(HttpClientWrapper httpClient, IManagedIdentityService managedIdentityService, IOrganizationService service, ITracingService tracingService)
         {
             this.HttpClient = httpClient;
