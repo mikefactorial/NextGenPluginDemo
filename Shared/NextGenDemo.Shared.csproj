@@ -15,7 +15,7 @@
     https://docs.microsoft.com/en-us/nuget/reference/msbuild-targets
   -->
   <PropertyGroup>
-    <PackageId>NextGenDemo.Plugins</PackageId>
+    <PackageId>NextGenDemo.SHared</PackageId>
     <Version>$(FileVersion)</Version>
     <Authors>mikef</Authors>
     <Company>MyCompany</Company>
