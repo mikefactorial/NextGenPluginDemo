@@ -1,0 +1,144 @@
+{
+  "examples": {
+    "controlBulb": {
+      "description": "Advanced bulb control with custom colors and patterns",
+      "endpoint": "POST /api/ControlBulb",
+      "examples": [
+        {
+          "name": "Rainbow Cycle",
+          "payload": {
+            "bulbIP": "192.168.1.50",
+            "colors": [
+              { "hex": "#FF0000", "durationMs": 1000 },
+              { "hex": "#FF7F00", "durationMs": 1000 },
+              { "hex": "#FFFF00", "durationMs": 1000 },
+              { "hex": "#00FF00", "durationMs": 1000 },
+              { "hex": "#0000FF", "durationMs": 1000 },
+              { "hex": "#4B0082", "durationMs": 1000 },
+              { "hex": "#9400D3", "durationMs": 1000 }
+            ],
+            "pattern": {
+              "type": "Sequential",
+              "repeatCount": 3,
+              "transition": "Fade",
+              "transitionDurationMs": 500
+            }
+          }
+        },
+        {
+          "name": "Breathing Effect",
+          "payload": {
+            "bulbIP": "192.168.1.50",
+            "colors": [
+              { "hex": "#0080FF", "brightness": 100, "durationMs": 2000 },
+              { "hex": "#FF4080", "brightness": 100, "durationMs": 2000 }
+            ],
+            "pattern": {
+              "type": "Pulse",
+              "repeatCount": 5,
+              "transition": "Instant",
+              "transitionDurationMs": 0
+            }
+          }
+        },
+        {
+          "name": "Warm to Cool Temperature",
+          "payload": {
+            "bulbIP": "192.168.1.50",
+            "colors": [
+              { "kelvin": 2700, "brightness": 80, "durationMs": 3000 },
+              { "kelvin": 4000, "brightness": 80, "durationMs": 3000 },
+              { "kelvin": 6500, "brightness": 80, "durationMs": 3000 }
+            ],
+            "pattern": {
+              "type": "PingPong",
+              "repeatCount": 2,
+              "transition": "Fade",
+              "transitionDurationMs": 1000
+            }
+          }
+        },
+        {
+          "name": "HSB Color Mixing",
+          "payload": {
+            "bulbIP": "192.168.1.50",
+            "colors": [
+              { "hue": 0, "saturation": 100, "brightness": 100, "durationMs": 800 },
+              { "hue": 60, "saturation": 100, "brightness": 100, "durationMs": 800 },
+              { "hue": 120, "saturation": 100, "brightness": 100, "durationMs": 800 },
+              { "hue": 180, "saturation": 100, "brightness": 100, "durationMs": 800 },
+              { "hue": 240, "saturation": 100, "brightness": 100, "durationMs": 800 },
+              { "hue": 300, "saturation": 100, "brightness": 100, "durationMs": 800 }
+            ],
+            "pattern": {
+              "type": "Random",
+              "repeatCount": 0,
+              "transition": "Flash",
+              "transitionDurationMs": 200
+            }
+          }
+        }
+      ]
+    },
+    "bulbQuickAction": {
+      "description": "Quick single actions for the bulb",
+      "endpoint": "POST /api/BulbQuickAction",
+      "examples": [
+        {
+          "name": "Turn On",
+          "payload": {
+            "bulbIP": "192.168.1.50",
+            "action": "on"
+          }
+        },
+        {
+          "name": "Turn Off",
+          "payload": {
+            "bulbIP": "192.168.1.50",
+            "action": "off"
+          }
+        },
+        {
+          "name": "Set to Red",
+          "payload": {
+            "bulbIP": "192.168.1.50",
+            "action": "red"
+          }
+        },
+        {
+          "name": "Set to Blue",
+          "payload": {
+            "bulbIP": "192.168.1.50",
+            "action": "blue"
+          }
+        }
+      ]
+    }
+  },
+  "colorStep_properties": {
+    "hex": "String - Hex color code (e.g., '#FF5733' or 'FF5733')",
+    "hue": "Number - Hue value (0-360)",
+    "saturation": "Number - Saturation percentage (0-100)",
+    "brightness": "Number - Brightness percentage (1-100)",
+    "kelvin": "Number - Color temperature in Kelvin (2700-6500)",
+    "durationMs": "Number - How long to display this color in milliseconds (default: 1000)"
+  },
+  "pattern_types": {
+    "Sequential": "Go through colors in the order provided",
+    "Random": "Randomly select colors from the list",
+    "PingPong": "Go forward through colors, then backward",
+    "Pulse": "Fade each color in and out for a breathing effect"
+  },
+  "transition_types": {
+    "Instant": "Immediate color changes",
+    "Fade": "Gradual transitions (simulated with brightness)",
+    "Flash": "Brief flash/off between colors"
+  },
+  "notes": [
+    "Replace bulbIP with your actual smart bulb's IP address",
+    "Color priority: Hex > HSB (Hue+Saturation) > Kelvin temperature",
+    "RepeatCount of 0 means infinite repetition",
+    "All timing values are in milliseconds",
+    "The function will turn the bulb on automatically before starting patterns"
+  ]
+}
