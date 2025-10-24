@@ -46,7 +46,7 @@
 
   <Import Project="$(PowerAppsTargetsPath)\Microsoft.PowerApps.VisualStudio.Plugin.targets" Condition="Exists('$(PowerAppsTargetsPath)\Microsoft.PowerApps.VisualStudio.Plugin.targets')" />
 
-  <Target Name="PostBuild" AfterTargets="Pack">
+  <Target Name="PostBuild" AfterTargets="Pack" Condition="'$(BuildingInsideVisualStudio)' == 'true'">
     <Exec Command="dotnet nuget sign &quot;$(ProjectDir)bin/$(ConfigurationName)/NextGenDemo.Plugins.1.0.0.nupkg&quot; --certificate-path &quot;$(ProjectDir)/certificate.pfx&quot; --certificate-password &quot;certificate_password&quot; --overwrite" />
   </Target>
 </Project>
