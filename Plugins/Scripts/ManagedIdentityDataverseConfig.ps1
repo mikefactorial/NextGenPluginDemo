@@ -58,10 +58,10 @@ $pfxScript = @"
     AddColumns(
         ShowColumns(
             Filter(
-                'Plug-in Assemblies',
+                'Plugin Packages',
                 'Created By'.'Full Name' <> "SYSTEM"
             ),
-            PluginAssemblyId,
+            pluginpackageid,
             Name,
             ManagedIdentityId
         ),
@@ -82,10 +82,10 @@ pac pfx run --file $listPluginAssembliesPfxScriptPath --echo
 ### Link the managed identity to the plug-in assembly
 $pfxScript = @"
     Patch(
-        'Plug-in Assemblies',
+        'Plugin Packages',
         LookUp(
-            'Plug-in Assemblies',
-            PluginAssemblyId = GUID("$pluginAssemblyId")
+            'Plugin Packages',
+            pluginpackageid = GUID("$pluginAssemblyId")
         ),
         {
             ManagedIdentityId: LookUp(
