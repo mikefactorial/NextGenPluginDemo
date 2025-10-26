@@ -101,8 +101,7 @@ namespace NextGenDemo.Plugins
                 localPluginContext.Trace($"No Bulb API payload found. Proceeding to call Device List API...");
                 // No API run device list
                 var azFunctionUrl = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.DeviceListUrlName);
-                var testSecret = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.APIMAccessTokenName);
-                localPluginContext.Trace($"Calling Device List API: {azFunctionUrl}: {testSecret}");
+                localPluginContext.Trace($"Calling Device List API: {azFunctionUrl}");
                 try
                 {
 
