@@ -113,6 +113,68 @@
           }
         }
       ]
+    },
+    "listDevices": {
+      "description": "Retrieve a list of all connected smart devices",
+      "endpoint": "GET /api/ListDevices",
+      "examples": [
+        {
+          "name": "Get All Devices",
+          "method": "GET",
+          "curl": "curl -X GET \"http://localhost:7071/api/ListDevices\"",
+          "expected_response": {
+            "message": "Devices retrieved successfully",
+            "deviceCount": 2,
+            "devices": [
+              {
+                "ip": "172.20.10.3",
+                "alias": "Mike!",
+                "on": true,
+                "model": "KL125(US)",
+                "sw_ver": "1.0.15 Build 240429 Rel.154143"
+              },
+              {
+                "ip": "172.20.10.5",
+                "alias": "Mike! Smart Plug",
+                "on": false,
+                "model": "EP10(US)",
+                "mac": "48:22:54:DE:73:A2",
+                "sw_ver": "1.0.5 Build 221021 Rel.183404"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "updateDeviceAlias": {
+      "description": "Update the alias (friendly name) of a smart device",
+      "endpoint": "POST /api/devices/{deviceIp}/alias",
+      "examples": [
+        {
+          "name": "Update Device Name",
+          "payload": {
+            "alias": "Living Room Light"
+          },
+          "curl": "curl -X POST \"http://localhost:7071/api/devices/192.168.1.100/alias\" -H \"Content-Type: application/json\" -d '{\"alias\": \"Living Room Light\"}'",
+          "expected_response": {
+            "message": "Successfully updated device alias",
+            "deviceIp": "192.168.1.100",
+            "newAlias": "Living Room Light"
+          }
+        },
+        {
+          "name": "Update Smart Plug Name",
+          "payload": {
+            "alias": "Kitchen Coffee Maker"
+          },
+          "curl": "curl -X POST \"http://localhost:7071/api/devices/192.168.1.101/alias\" -H \"Content-Type: application/json\" -d '{\"alias\": \"Kitchen Coffee Maker\"}'",
+          "expected_response": {
+            "message": "Successfully updated device alias",
+            "deviceIp": "192.168.1.101",
+            "newAlias": "Kitchen Coffee Maker"
+          }
+        }
+      ]
     }
   },
   "colorStep_properties": {
@@ -134,11 +196,48 @@
     "Fade": "Gradual transitions (simulated with brightness)",
     "Flash": "Brief flash/off between colors"
   },
+  "device_management": {
+    "listDevices": {
+      "description": "Returns all connected smart devices with their current status",
+      "method": "GET",
+      "authentication": "None required",
+      "response_fields": {
+        "ip": "Device IP address",
+        "alias": "User-friendly device name",
+        "on": "Power state (true/false)",
+        "model": "Device model number",
+        "sw_ver": "Software version",
+        "mac": "MAC address (optional, not all devices)"
+      }
+    },
+    "updateDeviceAlias": {
+      "description": "Changes the friendly name of a device",
+      "method": "POST",
+      "route_parameters": {
+        "deviceIp": "IP address of the device to update"
+      },
+      "body_parameters": {
+        "alias": "New friendly name (1-100 characters)"
+      },
+      "validation": {
+        "alias": "Required, cannot be empty, max 100 characters",
+        "deviceIp": "Must be provided in the URL path"
+      }
+    }
+  },
+  "error_responses": {
+    "400": "Bad Request - Invalid input parameters",
+    "500": "Internal Server Error - Unexpected server error",
+    "502": "Bad Gateway - External API service unavailable"
+  },
   "notes": [
     "Replace bulbIP with your actual smart bulb's IP address",
     "Color priority: Hex > HSB (Hue+Saturation) > Kelvin temperature",
     "RepeatCount of 0 means infinite repetition",
     "All timing values are in milliseconds",
-    "The function will turn the bulb on automatically before starting patterns"
+    "The function will turn the bulb on automatically before starting patterns",
+    "Device management functions work with all compatible smart devices (bulbs, plugs, etc.)",
+    "Use ListDevices to discover available devices and their current aliases",
+    "UpdateDeviceAlias changes are reflected immediately in the device's configuration"
   ]
 }

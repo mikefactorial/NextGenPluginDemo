@@ -10,6 +10,7 @@ using System.IdentityModel;
 using System.IO;
 using System.Net.Http;
 using System.Text;
+using System.Web;
 
 namespace NextGenDemo.Plugins
 {
@@ -51,9 +52,9 @@ namespace NextGenDemo.Plugins
 
             // Define the auth scope for the Azure Function (e.g. clientid/.default)
             var azFunctionScope = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.AzureFunctionAuthScopeName);
-            var scopes = new List<string> 
+            var scopes = new List<string>
             {
-                azFunctionScope 
+                azFunctionScope
             };
 
             // Acquire token for the Azure Function
@@ -62,35 +63,61 @@ namespace NextGenDemo.Plugins
 
             // Retrieve the JSON payload from input parameters
             localPluginContext.Trace($"Token acquired. Preparing to call Bulb API: {token}");
-            var jsonPayloadString = localPluginContext.PluginExecutionContext.InputParameters[BulbApiPayloadKey].ToString();
-
-            // Deserialize the JSON string to ensure it's properly formatted, then create HttpContent
-            var payloadObject = JsonConvert.DeserializeObject<BulbControlRequest>(jsonPayloadString);
-            // Set the Bulb IP from environment variable
-            var bulbIp = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbIpVariableName);
-            payloadObject.BulbIP = bulbIp;
-
-            var azFunctionUrl = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbQuickActionUrlName);
-            if (string.IsNullOrEmpty(payloadObject.Action))
+            if (localPluginContext.PluginExecutionContext.InputParameters[BulbApiPayloadKey] != null)
             {
-                azFunctionUrl = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbControlUrlName);
+                localPluginContext.Trace($"Bulb API payload found. Preparing request...");
+                var jsonPayloadString = localPluginContext.PluginExecutionContext.InputParameters[BulbApiPayloadKey].ToString();
+
+                // Deserialize the JSON string to ensure it's properly formatted, then create HttpContent
+                var payloadObject = JsonConvert.DeserializeObject<BulbControlRequest>(jsonPayloadString);
+                // Set the Bulb IP from environment variable
+                var bulbIp = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbIpVariableName);
+                payloadObject.BulbIP = bulbIp;
+
+                var azFunctionUrl = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbQuickActionUrlName);
+                if (string.IsNullOrEmpty(payloadObject.Action))
+                {
+                    azFunctionUrl = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbControlUrlName);
+                }
+
+                var httpContent = new StringContent(JsonConvert.SerializeObject(payloadObject), Encoding.UTF8, "application/json");
+
+                localPluginContext.Trace($"Calling Bulb API with payload {JsonConvert.SerializeObject(payloadObject)}...");
+                try
+                {
+                    var response = localPluginContext.HttpClient.GetResponse(azFunctionUrl, "Bearer", token, httpContent);
+                    localPluginContext.Trace("Bulb API call completed.");
+                    localPluginContext.Trace($"Received response: {response}");
+                    localPluginContext.PluginExecutionContext.OutputParameters[ResultOutputKey] = response;
+                }
+                catch (Exception ex)
+                {
+                    localPluginContext.Trace($"Error calling Bulb API: {ex.ToString()}");
+                    throw new InvalidPluginExecutionException(ex.ToString());
+                }
+            }
+            else
+            {
+                localPluginContext.Trace($"No Bulb API payload found. Proceeding to call Device List API...");
+                // No API run device list
+                var azFunctionUrl = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.DeviceListUrlName);
+                var testSecret = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.APIMAccessTokenName);
+                localPluginContext.Trace($"Calling Device List API: {azFunctionUrl}: {testSecret}");
+                try
+                {
+
+                    var response = localPluginContext.HttpClient.GetResponse(azFunctionUrl, "Bearer", token, null);
+                    localPluginContext.Trace("Device List call completed.");
+                    localPluginContext.Trace($"Received response: {response}");
+                    localPluginContext.PluginExecutionContext.OutputParameters[ResultOutputKey] = response;
+                }
+                catch (Exception ex)
+                {
+                    localPluginContext.Trace($"Error calling Device List API: {ex.ToString()}");
+                    throw new InvalidPluginExecutionException(ex.ToString());
+                }
             }
 
-            var httpContent = new StringContent(JsonConvert.SerializeObject(payloadObject), Encoding.UTF8, "application/json");
-
-            localPluginContext.Trace($"Calling Bulb API with payload {JsonConvert.SerializeObject(payloadObject)}...");
-            try
-            {
-                var response = localPluginContext.HttpClient.GetResponse(azFunctionUrl, "Bearer", token, httpContent);
-                localPluginContext.Trace("Bulb API call completed.");
-                localPluginContext.Trace($"Received response: {response}");
-                localPluginContext.PluginExecutionContext.OutputParameters[ResultOutputKey] = response;
-            }
-            catch (Exception ex)
-            {
-                localPluginContext.Trace($"Error calling Bulb API: {ex.ToString()}");
-                throw new InvalidPluginExecutionException(ex.ToString());
-            }
         }
     }
 }

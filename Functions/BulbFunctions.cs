@@ -155,6 +155,104 @@ namespace IOTBulbFunctions
             }
         }
 
+        [Function("ListDevices")]
+        public async Task<IActionResult> ListDevices([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req)
+        {
+            try
+            {
+                _logger.LogInformation("List devices function triggered.");
+
+                var devices = await _bulbControlService.GetDevicesAsync();
+                
+                if (devices == null)
+                {
+                    _logger.LogWarning("Failed to retrieve devices from the API");
+                    return new StatusCodeResult(502); // Bad Gateway - upstream service error
+                }
+
+                _logger.LogInformation("Successfully retrieved {DeviceCount} devices", devices.Count);
+                
+                return new OkObjectResult(devices);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in ListDevices function");
+                return new StatusCodeResult(500);
+            }
+        }
+
+        [Function("UpdateDeviceAlias")]
+        public async Task<IActionResult> UpdateDeviceAlias([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "devices/{deviceIp}/alias")] HttpRequest req, string deviceIp)
+        {
+            try
+            {
+                _logger.LogInformation("Update device alias function triggered for device {DeviceIp}", deviceIp);
+
+                if (string.IsNullOrWhiteSpace(deviceIp))
+                {
+                    return new BadRequestObjectResult(new { error = "Device IP is required" });
+                }
+
+                // Read the request body
+                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                
+                if (string.IsNullOrEmpty(requestBody))
+                {
+                    return new BadRequestObjectResult(new { error = "Request body is required" });
+                }
+
+                // Deserialize the request
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                
+                var aliasRequest = JsonSerializer.Deserialize<UpdateAliasRequest>(requestBody, options);
+                
+                if (aliasRequest == null || string.IsNullOrWhiteSpace(aliasRequest.Alias))
+                {
+                    return new BadRequestObjectResult(new { error = "Alias is required and cannot be empty" });
+                }
+
+                // Validate alias length (reasonable limit)
+                if (aliasRequest.Alias.Length > 100)
+                {
+                    return new BadRequestObjectResult(new { error = "Alias cannot exceed 100 characters" });
+                }
+
+                bool success = await _bulbControlService.UpdateDeviceAliasAsync(deviceIp, aliasRequest.Alias);
+                
+                if (success)
+                {
+                    _logger.LogInformation("Successfully updated alias for device {DeviceIp} to '{NewAlias}'", deviceIp, aliasRequest.Alias);
+                    return new OkObjectResult(new 
+                    { 
+                        message = $"Successfully updated device alias",
+                        deviceIp = deviceIp,
+                        newAlias = aliasRequest.Alias
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to update alias for device {DeviceIp}", deviceIp);
+                    return new BadRequestObjectResult(new 
+                    { 
+                        error = "Failed to update device alias. Check if the device IP is valid and the service is accessible." 
+                    });
+                }
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "Failed to parse JSON request for device {DeviceIp}", deviceIp);
+                return new BadRequestObjectResult(new { error = "Invalid JSON format", details = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in UpdateDeviceAlias function for device {DeviceIp}", deviceIp);
+                return new StatusCodeResult(500);
+            }
+        }
+
         private static string ValidateBulbRequest(BulbControlRequest request)
         {
             if (string.IsNullOrEmpty(request.BulbIP))

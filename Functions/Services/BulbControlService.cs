@@ -14,6 +14,8 @@ namespace IOTBulbFunctions.Services
         Task<bool> SetBulbTemperatureAsync(string bulbIP, int kelvin);
         Task<bool> SetBulbBrightnessAsync(string bulbIP, int brightness);
         Task ExecuteColorPatternAsync(BulbControlRequest request, CancellationToken cancellationToken = default);
+        Task<List<DeviceInfo>?> GetDevicesAsync();
+        Task<bool> UpdateDeviceAliasAsync(string deviceIp, string newAlias);
     }
 
     public class BulbControlService : IBulbControlService
@@ -55,17 +57,131 @@ namespace IOTBulbFunctions.Services
             _logger.LogInformation("BulbControlService initialized for base URL: {BaseUrl}", _apiSettings.BulbApiBaseUrl);
         }
 
+        public async Task<List<DeviceInfo>?> GetDevicesAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving device list from API");
+                var response = await _httpClient.GetAsync($"{_apiSettings.BulbApiBaseUrl}/devices");
+                _logger.LogInformation("Successfully retrieved device list");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Deserializing device list response");
+                    var content = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation("Successfully retrieved device list");
+                    
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    
+                    var devices = JsonSerializer.Deserialize<List<DeviceInfo>>(content, options);
+                    _logger.LogInformation("Retrieved {DeviceCount} devices", devices?.Count ?? 0);
+                    return devices;
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to retrieve devices. Status: {StatusCode}, Response: {Response}", 
+                        response.StatusCode, await response.Content.ReadAsStringAsync());
+                    return null;
+                }
+            }
+            catch (ObjectDisposedException ex)
+            {
+                _logger.LogError(ex, "HttpClient disposed while retrieving devices. This may indicate a service registration issue.");
+                return null;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Network error while retrieving devices");
+                return null;
+            }
+            catch (TaskCanceledException ex)
+            {
+                _logger.LogError(ex, "Timeout while retrieving devices");
+                return null;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "Failed to deserialize device list response");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Unexpected error while retrieving device: {ex.ToString()}");
+                return null;
+            }
+        }
+
+        public async Task<bool> UpdateDeviceAliasAsync(string deviceIp, string newAlias)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(deviceIp))
+                {
+                    _logger.LogWarning("Device IP cannot be null or empty");
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(newAlias))
+                {
+                    _logger.LogWarning("New alias cannot be null or empty");
+                    return false;
+                }
+
+                var payload = new UpdateAliasRequest { Alias = newAlias };
+                var json = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                
+                _logger.LogInformation("Updating device {DeviceIp} alias to {NewAlias}", deviceIp, newAlias);
+                var response = await _httpClient.PostAsync($"{_apiSettings.BulbApiBaseUrl}/{deviceIp}/alias", content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Successfully updated device {DeviceIp} alias to {NewAlias}", deviceIp, newAlias);
+                    return true;
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to update device alias. Status: {StatusCode}, Response: {Response}", 
+                        response.StatusCode, await response.Content.ReadAsStringAsync());
+                    return false;
+                }
+            }
+            catch (ObjectDisposedException ex)
+            {
+                _logger.LogError(ex, "HttpClient disposed while updating device alias for {DeviceIp}. This may indicate a service registration issue.", deviceIp);
+                return false;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Network error while updating device alias for {DeviceIp}", deviceIp);
+                return false;
+            }
+            catch (TaskCanceledException ex)
+            {
+                _logger.LogError(ex, "Timeout while updating device alias for {DeviceIp}", deviceIp);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while updating device alias for {DeviceIp}", deviceIp);
+                return false;
+            }
+        }
+
         public async Task<bool> SetBulbPowerAsync(string bulbIP, bool isOn)
         {
             try
             {
                 var endpoint = isOn ? "on" : "off";
-                _logger.LogDebug("Setting bulb {BulbIP} power {State}", bulbIP, endpoint);
+                _logger.LogInformation("Setting bulb {BulbIP} power {State}", bulbIP, endpoint);
                 var response = await _httpClient.GetAsync($"{_apiSettings.BulbApiBaseUrl}/test/{bulbIP}/{endpoint}");
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogDebug("Successfully set bulb {BulbIP} power {State}", bulbIP, endpoint);
+                    _logger.LogInformation("Successfully set bulb {BulbIP} power {State}", bulbIP, endpoint);
                     return true;
                 }
                 else
@@ -105,12 +221,12 @@ namespace IOTBulbFunctions.Services
                 var json = JsonSerializer.Serialize(payload);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 
-                _logger.LogDebug("Setting bulb {BulbIP} to hex color {Hex}", bulbIP, hex);
+                _logger.LogInformation("Setting bulb {BulbIP} to hex color {Hex}", bulbIP, hex);
                 var response = await _httpClient.PostAsync($"{_apiSettings.BulbApiBaseUrl}/bulb/{bulbIP}/hex", content);
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogDebug("Successfully set bulb {BulbIP} to hex color {Hex}", bulbIP, hex);
+                    _logger.LogInformation("Successfully set bulb {BulbIP} to hex color {Hex}", bulbIP, hex);
                     return true;
                 }
                 else
