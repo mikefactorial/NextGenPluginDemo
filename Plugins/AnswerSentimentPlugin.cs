@@ -27,37 +27,22 @@ namespace NextGenDemo.Plugins
             localPluginContext.Trace(localPluginContext.PluginExecutionContext.MessageName + " AnswerPlugin Execution Started");
             var bulbControlRequest = new BulbControlRequest();
 
-
-            if (answerText.ToLower().Contains("vibe"))
-            {
-                bulbControlRequest.Action = "Blue";
-            }
-            else if (answerText.ToLower().Contains("tradition"))
-            {
-                bulbControlRequest.Action = "Red";
-            }
-            else if (answerText.ToLower().Contains("low"))
+            var aiSentimentRequest = new OrganizationRequest("AISentiment");
+            aiSentimentRequest.Parameters.Add("Text", answerText);
+            var response = localPluginContext.PluginUserService.Execute(aiSentimentRequest);
+            if (response.Results["AnalyzedSentiment"].ToString().ToLower() == "positive")
             {
                 bulbControlRequest.Action = "Green";
             }
+            else if (response.Results["AnalyzedSentiment"].ToString().ToLower() == "negative")
+            {
+                bulbControlRequest.Action = "Red";
+            }
             else
             {
-                var aiSentimentRequest = new OrganizationRequest("AISentiment");
-                aiSentimentRequest.Parameters.Add("Text", answerText);
-                var response = localPluginContext.PluginUserService.Execute(aiSentimentRequest);
-                if (response.Results["AnalyzedSentiment"].ToString().ToLower() == "positive")
-                {
-                    bulbControlRequest.Action = "Green";
-                }
-                else if (response.Results["AnalyzedSentiment"].ToString().ToLower() == "negative")
-                {
-                    bulbControlRequest.Action = "Red";
-                }
-                else
-                {
-                    bulbControlRequest.Action = "Blue";
-                }
+                bulbControlRequest.Action = "Blue";
             }
+            
             var bulbPayload = Newtonsoft.Json.JsonConvert.SerializeObject(bulbControlRequest);
             var bulbRequest = new OrganizationRequest("mf_BulbApi");
             bulbRequest.Parameters.Add("BulbApiPayload", bulbPayload);

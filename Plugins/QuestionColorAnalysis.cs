@@ -47,10 +47,10 @@ namespace NextGenDemo.Plugins
             {
                 tracingService.Trace("Both summarized answer and question text are present. Preparing instruction and data for AI service.");
 
-                var instruction = "You are to come up with a series of colors for a smart light bulb that represents the answer " +
-                    "to the given question. Kelvin must be between 2700 and 6500. Select a maximum of 4 colors. To provide your answer, please only return a JSON array of objects with the following " +
+                var instruction = "You are to come up with a series of colors for a smart light bulb that is associated with the answer " +
+                    ", in the context of the given question. Kelvin must be between 2700 and 6500. Brightness must be between 1 and 100. Select a maximum of 4 colors. To provide your answer, please only return a JSON array of objects with the following " +
                     " properties: {\r\n        public string Hex { get; set; }\r\n        public Int32? Hue { get; set; }\r\n        public Int32? Saturation { get; set; }\r\n        public Int32? Brightness { get; set; }\r\n        public Int32? Kelvin { get; set; }\r\n        public int DurationMs { get; set; } = 1000; // Default 1 second\r\n    }";
-                var data = $"Question: {question} || Answer: {answer}";
+                var data = $"Question: {question} || Answer to Analyze: {answer}";
 
                 // Send the answers to the AI service
                 tracingService.Trace("Initializing ApimClient.");

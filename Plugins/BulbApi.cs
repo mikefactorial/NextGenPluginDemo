@@ -81,12 +81,6 @@ namespace NextGenDemo.Plugins
                     azFunctionUrl = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbControlUrlName);
                 }
 
-                // Set the Bulb IP from environment variable
-
-                /*
-                var bulbIp = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbIpVariableName);
-                */
-
                 // Itterate over each device
                 foreach (var enabledDeviceIp in enabledDevicesIp)
                 {
@@ -133,14 +127,13 @@ namespace NextGenDemo.Plugins
 
         protected List<string> RetrieveEnabledDevices(IOrganizationService service)
         {
-            var bulbIpAddressQuery = new QueryExpression("mf_smartplugdevice");
-            bulbIpAddressQuery.ColumnSet = new ColumnSet("mf_ipaddress");
-            bulbIpAddressQuery.Criteria.AddCondition("mf_ipaddress", ConditionOperator.NotNull);
-            bulbIpAddressQuery.Criteria.AddCondition("mf_ison", ConditionOperator.Equal, true);
+            var bulbIpAddressQuery = new QueryExpression("mf_smartdevice");
+            bulbIpAddressQuery.ColumnSet = new ColumnSet("mf_address");
+            bulbIpAddressQuery.Criteria.AddCondition("mf_address", ConditionOperator.NotNull);
             var enabledDevices = service.RetrieveMultiple(bulbIpAddressQuery).Entities.ToList();
 
             return enabledDevices
-                .Select(device => device.GetAttributeValue<string>("mf_ipaddress"))
+                .Select(device => device.GetAttributeValue<string>("mf_address"))
                 .ToList();
         }
     }
