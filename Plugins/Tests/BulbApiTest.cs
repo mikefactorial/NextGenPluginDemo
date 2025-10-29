@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
 using Moq;
 using Newtonsoft.Json;
 using NextGenDemo.Plugins.Integration;
@@ -226,6 +227,8 @@ namespace NextGenDemo.Plugins.Tests
                          .Returns("https://testfunction.azurewebsites.net/api/bulbcontrol");
             mockEnvService.Setup(x => x.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbQuickActionUrlName))
                          .Returns("https://testfunction.azurewebsites.net/api/bulbquickaction");
+            mockEnvService.Setup(x => x.RetrieveEnvironmentVariableValue(EnvironmentVariableService.DeviceListUrlName))
+                         .Returns("https://testfunction.azurewebsites.net/api/devicelist");
 
             // Setup HttpClient mock
             var mockHttpClient = new Mock<HttpClientWrapper>();
@@ -255,12 +258,33 @@ namespace NextGenDemo.Plugins.Tests
                                   .Returns("test-token-123");
             }
 
+            // Setup Organization Service mock for device queries
+            var mockOrgService = new Mock<IOrganizationService>();
+            var deviceCollection = new EntityCollection();
+            
+            // Add mock device entities
+            var device1 = new Entity("mf_smartplugdevice");
+            device1["mf_ipaddress"] = "192.168.1.100";
+            device1["mf_ison"] = true;
+            
+            var device2 = new Entity("mf_smartplugdevice");
+            device2["mf_ipaddress"] = "192.168.1.101";
+            device2["mf_ison"] = true;
+            
+            deviceCollection.Entities.Add(device1);
+            deviceCollection.Entities.Add(device2);
+            
+            mockOrgService.Setup(x => x.RetrieveMultiple(It.IsAny<QueryExpression>()))
+                         .Returns(deviceCollection);
+
             // Create LocalPluginContext mock
             var mockLocalPluginContext = new Mock<ILocalPluginContext>();
             mockLocalPluginContext.Setup(x => x.PluginExecutionContext).Returns(pluginContext);
             mockLocalPluginContext.Setup(x => x.EnvironmentVariableService).Returns(mockEnvService.Object);
             mockLocalPluginContext.Setup(x => x.HttpClient).Returns(mockHttpClient.Object);
             mockLocalPluginContext.Setup(x => x.ManagedIdentityService).Returns(mockManagedIdentity.Object);
+            mockLocalPluginContext.Setup(x => x.PluginUserService).Returns(mockOrgService.Object);
+            mockLocalPluginContext.Setup(x => x.Trace(It.IsAny<string>(), It.IsAny<string>()));
 
             return mockLocalPluginContext;
         }
