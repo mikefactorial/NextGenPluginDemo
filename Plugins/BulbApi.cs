@@ -1,5 +1,7 @@
 ﻿using Azure.Storage.Blobs;
+using Microsoft.Extensions.Azure;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
 using Newtonsoft.Json;
 using NextGenDemo.Plugins.Integration;
 using NextGenDemo.Plugins.Types;
@@ -8,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Web;
@@ -67,12 +70,10 @@ namespace NextGenDemo.Plugins
             {
                 localPluginContext.Trace($"Bulb API payload found. Preparing request...");
                 var jsonPayloadString = localPluginContext.PluginExecutionContext.InputParameters[BulbApiPayloadKey].ToString();
+                var enabledDevicesIp = RetrieveEnabledDevices(localPluginContext.PluginUserService);
 
                 // Deserialize the JSON string to ensure it's properly formatted, then create HttpContent
                 var payloadObject = JsonConvert.DeserializeObject<BulbControlRequest>(jsonPayloadString);
-                // Set the Bulb IP from environment variable
-                var bulbIp = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbIpVariableName);
-                payloadObject.BulbIP = bulbIp;
 
                 var azFunctionUrl = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbQuickActionUrlName);
                 if (string.IsNullOrEmpty(payloadObject.Action))
@@ -80,20 +81,31 @@ namespace NextGenDemo.Plugins
                     azFunctionUrl = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbControlUrlName);
                 }
 
-                var httpContent = new StringContent(JsonConvert.SerializeObject(payloadObject), Encoding.UTF8, "application/json");
+                // Set the Bulb IP from environment variable
 
-                localPluginContext.Trace($"Calling Bulb API with payload {JsonConvert.SerializeObject(payloadObject)}...");
-                try
+                /*
+                var bulbIp = localPluginContext.EnvironmentVariableService.RetrieveEnvironmentVariableValue(EnvironmentVariableService.BulbIpVariableName);
+                */
+
+                // Itterate over each device
+                foreach (var enabledDeviceIp in enabledDevicesIp)
                 {
-                    var response = localPluginContext.HttpClient.GetResponse(azFunctionUrl, "Bearer", token, httpContent);
-                    localPluginContext.Trace("Bulb API call completed.");
-                    localPluginContext.Trace($"Received response: {response}");
-                    localPluginContext.PluginExecutionContext.OutputParameters[ResultOutputKey] = response;
-                }
-                catch (Exception ex)
-                {
-                    localPluginContext.Trace($"Error calling Bulb API: {ex.ToString()}");
-                    throw new InvalidPluginExecutionException(ex.ToString());
+                    payloadObject.BulbIP = enabledDeviceIp;
+                    var httpContent = new StringContent(JsonConvert.SerializeObject(payloadObject), Encoding.UTF8, "application/json");
+
+                    localPluginContext.Trace($"Calling Bulb API with payload {JsonConvert.SerializeObject(payloadObject)}...");
+                    try
+                    {
+                        var response = localPluginContext.HttpClient.GetResponse(azFunctionUrl, "Bearer", token, httpContent);
+                        localPluginContext.Trace("Bulb API call completed.");
+                        localPluginContext.Trace($"Received response: {response}");
+                        localPluginContext.PluginExecutionContext.OutputParameters[ResultOutputKey] = response;
+                    }
+                    catch (Exception ex)
+                    {
+                        localPluginContext.Trace($"Error calling Bulb API: {ex.ToString()}");
+                        throw new InvalidPluginExecutionException(ex.ToString());
+                    }
                 }
             }
             else
@@ -117,6 +129,19 @@ namespace NextGenDemo.Plugins
                 }
             }
 
+        }
+
+        protected List<string> RetrieveEnabledDevices(IOrganizationService service)
+        {
+            var bulbIpAddressQuery = new QueryExpression("mf_smartplugdevice");
+            bulbIpAddressQuery.ColumnSet = new ColumnSet("mf_ipaddress");
+            bulbIpAddressQuery.Criteria.AddCondition("mf_ipaddress", ConditionOperator.NotNull);
+            bulbIpAddressQuery.Criteria.AddCondition("mf_ison", ConditionOperator.Equal, true);
+            var enabledDevices = service.RetrieveMultiple(bulbIpAddressQuery).Entities.ToList();
+
+            return enabledDevices
+                .Select(device => device.GetAttributeValue<string>("mf_ipaddress"))
+                .ToList();
         }
     }
 }
